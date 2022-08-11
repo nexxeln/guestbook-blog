@@ -1,4 +1,5 @@
 import { signIn, signOut, useSession } from "next-auth/react";
+import { useState } from "react";
 import { trpc } from "../utils/trpc";
 
 const Messages = () => {
@@ -22,6 +23,8 @@ const Messages = () => {
 
 const Home = () => {
   const { data: session, status } = useSession();
+  const [message, setMessage] = useState("");
+  const postMessage = trpc.useMutation("guestbook.postMessage");
 
   if (status === "loading") {
     return <main className="flex flex-col items-center pt-4">Loading...</main>;
@@ -40,6 +43,35 @@ const Home = () => {
             <p>hi {session.user?.name}</p>
 
             <button onClick={() => signOut()}>Logout</button>
+
+            <div className="pt-6">
+              <form
+                className="flex gap-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+
+                  postMessage.mutate({
+                    name: session.user?.name as string,
+                    message,
+                  });
+                }}
+              >
+                <input
+                  type="text"
+                  value={message}
+                  placeholder="Your message..."
+                  maxLength={100}
+                  onChange={(event) => setMessage(event.target.value)}
+                  className="px-4 py-2 rounded-md border-2 border-zinc-800 bg-neutral-900 focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  className="p-2 rounded-md border-2 border-zinc-800 focus:outline-none"
+                >
+                  Submit
+                </button>
+              </form>
+            </div>
 
             <div className="pt-10">
               <Messages />
