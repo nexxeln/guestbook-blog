@@ -54,12 +54,15 @@ const Home = () => {
                     name: session.user?.name as string,
                     message,
                   });
+
+                  setMessage("");
                 }}
               >
                 <input
                   type="text"
                   value={message}
                   placeholder="Your message..."
+                  minLength={2}
                   maxLength={100}
                   onChange={(event) => setMessage(event.target.value)}
                   className="px-4 py-2 rounded-md border-2 border-zinc-800 bg-neutral-900 focus:outline-none"
