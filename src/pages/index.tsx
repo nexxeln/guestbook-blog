@@ -1,4 +1,24 @@
 import { signIn, signOut, useSession } from "next-auth/react";
+import { trpc } from "../utils/trpc";
+
+const Messages = () => {
+  const { data: messages, isLoading } = trpc.useQuery(["guestbook.getAll"]);
+
+  if (isLoading) return <div>Fetching messages...</div>;
+
+  return (
+    <div className="flex flex-col gap-4">
+      {messages?.map((msg, index) => {
+        return (
+          <div key={index}>
+            <p>{msg.message}</p>
+            <span>- {msg.name}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 const Home = () => {
   const { data: session, status } = useSession();
@@ -20,12 +40,19 @@ const Home = () => {
             <p>hi {session.user?.name}</p>
 
             <button onClick={() => signOut()}>Logout</button>
+
+            <div className="pt-10">
+              <Messages />
+            </div>
           </div>
         ) : (
           <div>
             <button onClick={() => signIn("discord")}>
               Login with Discord
             </button>
+
+            <div className="pt-10" />
+            <Messages />
           </div>
         )}
       </div>
