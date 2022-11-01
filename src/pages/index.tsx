@@ -21,25 +21,61 @@ const Messages = () => {
   );
 };
 
-const Home = () => {
-  const { data: session, status } = useSession();
+const Form = () => {
+  const { data: session }  = useSession()
   const [message, setMessage] = useState("");
-
-  const ctx = trpc.useContext();
+  const utils = trpc.useContext();
   const postMessage = trpc.guestbook.postMessage.useMutation({
     onMutate: () => {
-      ctx.guestbook.getAll.cancel();
-      const optimisticUpdate = ctx.guestbook.getAll.getData();
+      utils.guestbook.getAll.cancel();
+      const optimisticUpdate = utils.guestbook.getAll.getData();
 
       if (optimisticUpdate) {
-        ctx.guestbook.getAll.setData(optimisticUpdate);
+        utils.guestbook.getAll.setData(optimisticUpdate);
       }
-    },
-    
+    },    
     onSettled: () => {
-      ctx.guestbook.getAll.invalidate();
+        utils.guestbook.getAll.invalidate();
     },
   });
+
+  return (
+    <form
+      className="flex gap-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+
+        if (session !== null) {
+          postMessage.mutate({
+            name: session.user?.name as string,
+            message,
+          });
+        }
+
+        setMessage("");
+      }}
+    >
+      <input
+        type="text"
+        value={message}
+        placeholder="Your message..."
+        minLength={2}
+        maxLength={100}
+        onChange={(event) => setMessage(event.target.value)}
+        className="px-4 py-2 rounded-md border-2 border-zinc-800 bg-neutral-900 focus:outline-none"
+      />
+      <button
+        type="submit"
+        className="p-2 rounded-md border-2 border-zinc-800 focus:outline-none"
+      >
+        Submit
+      </button>
+    </form>
+  );
+}
+
+const Home = () => {
+  const { data: session, status } = useSession();
 
   if (status === "loading") {
     return <main className="flex flex-col items-center pt-4">Loading...</main>;
@@ -53,58 +89,28 @@ const Home = () => {
       </p>
 
       <div className="pt-10">
-        {session ? (
-          <div>
-            <p>hi {session.user?.name}</p>
+        <div>
+          {session ? (
+            <>
+              <p>hi {session.user?.name}</p>
+              
+              <button onClick={() => signOut()}>
+                Logout
+              </button>
 
-            <button onClick={() => signOut()}>Logout</button>
-
-            <div className="pt-6">
-              <form
-                className="flex gap-2"
-                onSubmit={(event) => {
-                  event.preventDefault();
-
-                  postMessage.mutate({
-                    name: session.user?.name as string,
-                    message,
-                  });
-
-                  setMessage("");
-                }}
-              >
-                <input
-                  type="text"
-                  value={message}
-                  placeholder="Your message..."
-                  minLength={2}
-                  maxLength={100}
-                  onChange={(event) => setMessage(event.target.value)}
-                  className="px-4 py-2 rounded-md border-2 border-zinc-800 bg-neutral-900 focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  className="p-2 rounded-md border-2 border-zinc-800 focus:outline-none"
-                >
-                  Submit
-                </button>
-              </form>
-            </div>
-
-            <div className="pt-10">
-              <Messages />
-            </div>
-          </div>
-        ) : (
-          <div>
+              <div className="pt-6">
+                <Form />
+              </div>
+            </>
+          ) : (
             <button onClick={() => signIn("discord")}>
               Login with Discord
             </button>
-
-            <div className="pt-10" />
+          )}
+          <div className="pt-10">
             <Messages />
           </div>
-        )}
+        </div>
       </div>
     </main>
   );
